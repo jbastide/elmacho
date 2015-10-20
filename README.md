@@ -1,12 +1,12 @@
 # elmacho
 A tool to work with PDF packing list data and flat files from hand scanners in order to facilitate product intake at a warehouse.
 
-I'm witholding the packing lists and varer.dat file. I'll add file descriptions, thoough, 
-for people who are interested.
+I'm witholding the packing lists and varer.dat file. I'll add file descriptions, though, 
+for people who are interested in what the data looks like.
 
-This code works, but you'll want to adapt it to your own use.
+This code works, (I'd consider it proof of concept right now) but you'll want to adapt it to your own use.
 
-The reason I wrote it was that we hand scanners (barcode readers), but we were still counting items manually when
+The reason I wrote it was that we had hand scanners (barcode readers), but we were still counting items manually when
 receiving shipments in the warehouse. I wondered why, asked around, and found out that 'it's just how we do things
 around here.'
 
