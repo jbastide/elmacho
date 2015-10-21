@@ -35,4 +35,6 @@ I ended up setting up an Ubuntu VM with everything I needed, and putting VMware 
 The next thing will be a simple internal web interface to make it easier for the other warehouse guys to use
 this.
 
+[And this is just a test commit from my Mac.]
+
 -Jesse
