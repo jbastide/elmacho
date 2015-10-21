@@ -348,7 +348,7 @@ def viewSortedItemDescList(descList)
 		end
 		
 		add_row [{value: "Total number of individual items on packing list", colspan: 2}, itemTotal]
-		add_row [{value: "Total number of individual SKUs on packing list:", colspan: 2}, descList.length]
+		add_row [{value: "Total number of SKU entries on packing list:", colspan: 2}, descList.length]
 	end
 	puts displayTable
 	return displayTable	
@@ -402,7 +402,6 @@ end
 # This is broken on Windows when we do regex matching.
 
 def transformEanFile(itemIdDescList)
-	puts "DEBUG: Inside tranform EAN function"	
 	#
 	# Standard processing stuff. Chomp trailing spaces. Ignore blank lines.
 	# The numeric codes are thirteen characters, then the rest is the item 
@@ -499,7 +498,7 @@ def transformScannerData(scanDataList)
 		end
 	end
 	
-	puts "DEBUG: number of key,value pairs in the hashed data: #{hashedData.length}"
+	#puts "DEBUG: number of key,value pairs in the hashed data: #{hashedData.length}"
 	return hashedData
 end
 
@@ -633,39 +632,70 @@ def getAllMatches(descQuant, masterHashList)
 		end
 	end
 
-	
+=begin	
 	puts "DEBUG: Updated Master Hash List"
 	masterHashList.each do |entry|
 		puts 
 		puts entry
 		puts
 	end	
-	
+=end	
 	return masterHashList
 
 end
+
+
+def calculateTotalItemsScanned(combinedData)
+	scannedTotal = 0
+
+	combinedData.each do |entry|
+		if entry[:scannedQuantity]
+			scannedTotal += entry[:scannedQuantity]
+		end 
+	end
+	
+	return scannedTotal
+end
+
 
 #
 # Do the final data visualization. Here we need to show this in the context of the larger packing list.
 #
 
 def showCombinedData(combinedData)
+
+	totalItemsScanned = calculateTotalItemsScanned(combinedData)
 	
 	displayTable = table do 
 		self.headings = "SKU", "EAN", "Description", "Matched Description", "Expected_Quantity", 
 "Scanned_Quantity", "Match Confidence"
 	
-	combinedData.each do |entry|
+		combinedData.each do |entry|
 			add_row [ entry[:itemNum], entry[:scannedEAN],
 	entry[:itemDesc], entry[:scannedDescription], 
 	entry[:itemQuant], entry[:scannedQuantity], entry[:confidence] ]
 			self.add_separator
 		end
-	end 	
+		add_row [{value: "Total number of scanned items", colspan: 1}, totalItemsScanned]
+	end
+	
+	#
+	# Warn about items that have different EANs but the same SKU. We might also want to do this 
+	# Earlier in the script. Might even return this value.
+	# For now, return it here.
+	#
+
+	combinedData.each do |entry|
+		
+		# Make a map of SKUs and their EANs. SKU => EAN
+
+		#
+	end	
+
+
 
 	puts displayTable
 	return displayTable
-	
 end
 
 #
@@ -718,7 +748,7 @@ if (options.scanDataFilePath != "")
 	begin
 		puts "INFO: Processing EAN mapping file."
 		eanFileHandle = getFile(EANMAPFILEPATH)	
-		puts "DEBUG: Got EAN File handle: #{eanFileHandle}"
+		#puts "DEBUG: Got EAN File handle: #{eanFileHandle}"
 		eanMapList = processFile(eanFileHandle)	
 		#puts "DEBUG: Printing first line from eanMapList #{eanMapList[0]}"
 		hashedEanFile = transformEanFile(eanMapList)
@@ -735,8 +765,8 @@ if (options.scanDataFilePath != "")
 		scanDataList = processFile(scanDataFileHandle)
 		
 		# DEBUG
-		puts "DEBUG: scanDataList"
-		puts "DEBUG: Scan data list length: #{scanDataList.length}"
+		#puts "DEBUG: scanDataList"
+		#puts "DEBUG: Scan data list length: #{scanDataList.length}"
 		
 		hashedScannerData = transformScannerData(scanDataList)
 	rescue
@@ -791,9 +821,6 @@ if (options.scanDataFilePath != "")
 	# Take the combined data and display it in a nice table.
 
 	showCombinedData(combinedData)	
-	
-	# TODO: Make one well-defined data structure to hold all this information.	
-
 end
 
 
