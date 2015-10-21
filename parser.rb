@@ -103,7 +103,6 @@ end
 
 def verifyEntry(entry)
 	if entry == ""
-		#puts "Blank Line. Not pushing to list."
 		return nil
 	else
 		return entry
@@ -297,7 +296,8 @@ def createMasterList(reader)
 					:scannedDescription => nil,
 					:scannedEAN => nil,
 					:scannedSerials => [],
-					:confidence => nil
+					:confidence => nil,
+					:descriptionFrequency => 0 # New field for detecting duplicates.
 					}					
 		masterHashList << entryHash
 	end
@@ -665,37 +665,34 @@ end
 def showCombinedData(combinedData)
 
 	totalItemsScanned = calculateTotalItemsScanned(combinedData)
-	
+
+	#	
+	# Items that have duplicate descriptions should be flagged for manual follow-up.
+	#
+
+	combinedData.each do |entry|
+		combinedData.each do |record|
+			if entry[:itemDesc] == record[:itemDesc]
+				entry[:descriptionFrequency] += 1
+			end
+		end
+	end
+
 	displayTable = table do 
 		self.headings = "SKU", "EAN", "Description", "Matched Description", "Expected_Quantity", 
-"Scanned_Quantity", "Match Confidence"
+"Scanned_Quantity", "Match Confidence", "Description Frequency"
 	
 		combinedData.each do |entry|
 			add_row [ entry[:itemNum], entry[:scannedEAN],
 	entry[:itemDesc], entry[:scannedDescription], 
-	entry[:itemQuant], entry[:scannedQuantity], entry[:confidence] ]
+	entry[:itemQuant], entry[:scannedQuantity], entry[:confidence], entry[:descriptionFrequency] ]
 			self.add_separator
 		end
 		add_row [{value: "Total number of scanned items", colspan: 1}, totalItemsScanned]
 	end
 	
-	#
-	# Warn about items that have different EANs but the same SKU. We might also want to do this 
-	# Earlier in the script. Might even return this value.
-	# For now, return it here.
-	#
-
-	combinedData.each do |entry|
-		
-		# Make a map of SKUs and their EANs. SKU => EAN
-
-		#
-	end	
-
-
-
 	puts displayTable
-	return displayTable
+	return displayTable, combinedData
 end
 
 #
