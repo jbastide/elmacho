@@ -583,18 +583,18 @@ end
 
 def getAllMatches(descQuant, masterHashList)
 
-	jarrowTestValues = [0.99, 0.98, 0.97, 0.96, 0.95,0.94,0.93,0.92,0.91, 0.90,0.89, 0.88, 0.87,
+	jaroTestValues = [0.99, 0.98, 0.97, 0.96, 0.95,0.94,0.93,0.92,0.91, 0.90,0.89, 0.88, 0.87,
 0.86,0.85, 0.84, 0.83, 0.82,0.81] 
 	itemsMatched = []
 	match = nil
 	jarow = FuzzyStringMatch::JaroWinkler.create( :native )
 
 	masterHashList.each do |expectedItem|
-		jarrowDistanceHash = {} # All results for a given entry in the master hash
+		jaroDistanceHash = {} # All results for a given entry in the master hash
 		descQuant.each do |scannedItem|
-			jarrowTestValues.each do |j|
+			jaroTestValues.each do |j|
 				d = jarow.getDistance( scannedItem[:itemDescription], expectedItem[:itemDesc])
-				jarrowDistanceHash[d] = {scannedItem: scannedItem, expectedItem: expectedItem}
+				jaroDistanceHash[d] = {scannedItem: scannedItem, expectedItem: expectedItem}
 			end	
 		end
 
@@ -602,13 +602,13 @@ def getAllMatches(descQuant, masterHashList)
 		# Sort keys in descending order. This puts the greatest Jarrow match value first in the array.
 		#
 
-		sortedKeys = jarrowDistanceHash.keys.sort{|x,y| y <=> x}
+		sortedKeys = jaroDistanceHash.keys.sort{|x,y| y <=> x}
 
 		#		
 		# Store the best match in the form {scannedItem: scannedItem, expectedItem: expectedItem}
 		#
 
-		bestMatch = jarrowDistanceHash[sortedKeys[0]]
+		bestMatch = jaroDistanceHash[sortedKeys[0]]
 		#puts "DEBUG!!!! Best Match #{bestMatch}"
 			
 		#	
@@ -627,7 +627,7 @@ def getAllMatches(descQuant, masterHashList)
                 	expectedItem[:confidence] = sortedKeys[0]
 			
 			#puts
-			#puts "DEBUG: Best Match based on jarrow distance:#{sortedKeys[0]}::#{jarrowDistanceHash[sortedKeys[0]]}"
+			#puts "DEBUG: Best Match based on jaro winkler distance:#{sortedKeys[0]}::#{jaroDistanceHash[sortedKeys[0]]}"
 			#puts "****"
 		end
 	end
