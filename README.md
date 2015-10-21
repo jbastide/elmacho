@@ -19,7 +19,7 @@ Some challenges with this project:
 
 Scraping data out of PDFs.
 
-Lack of standardization when describing items. Makes you wonder what the databases look like on the back end. 
+Lack of standardization when describing items. Makes you wonder what the databases looks like on the back end. 
 
 Lack of common keys (EANs) across inventory and receiving documents.
 
