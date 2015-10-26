@@ -807,7 +807,8 @@ def makeUniqMasterHash(masterHashList)
     total += i[:itemQuant]
   end
   
-  puts "INFO: total unique items expected after consolidating duplicate SKUs: #{total}"
+  puts "INFO: Total unique items expected after consolidating duplicate SKUs: #{total}"
+  puts "INFO: Total unique SKUs expected after consolidation: #{uniqMasterHashList.length} "
   return uniqMasterHashList 
 end
 
