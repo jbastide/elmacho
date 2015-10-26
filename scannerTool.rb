@@ -6,6 +6,7 @@ require 'pp'
 require 'pdf-reader'
 require 'terminal-table/import'
 require 'fuzzystringmatch'
+require 'colorize'
 
 # EANMAPFILEPATH = "C:/elguide/telling/ut/varer.dat"
 EANMAPFILEPATH = "./varer.dat" #In this example, we have the varer.dat file in the
@@ -658,6 +659,30 @@ def calculateTotalItemsScanned(combinedData)
 	return scannedTotal
 end
 
+#
+# Helper to color code flag results with low match confidence.
+#
+
+def confidenceColorCheck(entry)
+	confidence = entry[:confidence]
+
+	if confidence == nil
+		confidence = 0
+	end
+
+	puts "DEBUG: Confidence: #{confidence}"
+	if confidence > 0.95
+		coloredEntry = confidence.round(3).to_s.green
+	elsif confidence > 0.92 and confidence < 0.95
+		coloredEntry = confidence.round(3).to_s.yellow
+	elsif confidence > 0.80 and confidence < 0.92
+		coloredEntry = confidence.round(3).to_s.magenta
+	else
+		coloredEntry = confidence.round(3).to_s.red
+	end
+
+	return coloredEntry
+end
 
 #
 # Do the final data visualization. Here we need to show this in the context of the larger packing list.
@@ -684,9 +709,10 @@ def showCombinedData(combinedData)
 "Scanned_Quantity", "Match Confidence", "Description Frequency"
 	
 		combinedData.each do |entry|
+			coloredEntry = confidenceColorCheck(entry)
 			add_row [ entry[:itemNum], entry[:scannedEAN],
 	entry[:itemDesc], entry[:scannedDescription], 
-	entry[:itemQuant], entry[:scannedQuantity], entry[:confidence], entry[:descriptionFrequency] ]
+	entry[:itemQuant], entry[:scannedQuantity], coloredEntry, entry[:descriptionFrequency] ]
 			self.add_separator
 		end
 		add_row [{value: "Total number of scanned items", colspan: 1}, totalItemsScanned]
