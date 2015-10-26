@@ -738,6 +738,80 @@ def showCombinedData(combinedData)
 end
 
 #
+# Make a unique master hash list
+#
+
+def makeUniqMasterHash(masterHashList)
+  
+  #
+  # Transform the existing list to make it unique with updated item quantities.
+  # 
+  
+  uniqMasterHashList = []
+  
+  #
+  # Make a blank list to hold uniq hash item numbers. We can sort these.
+  #
+  
+  itemNumsUniqSorted = []
+  
+  #
+  # Iterate through the hash items and create a list of item numbers.
+  # Sort the list. This will be the item order. Make the list only hold
+  # unique items.
+  #
+  
+  masterHashList.each do |item|
+    itemNumsUniqSorted << item[:itemNum]
+  end
+  itemNumsUniqSorted = itemNumsUniqSorted.uniq.sort()
+  
+  
+  itemNumsUniqSorted.each do |num|
+    
+    # 
+    # This is a list of all items in the masterHashList that match a given uniq item number.
+    #
+    
+    occurences = masterHashList.find_all {|m| m[:itemNum] == num} 
+    
+    #
+    # Start our count from zero until we tell it otherwise.
+    #
+    
+    itemTotal = 0
+    
+    #
+    # Update total number of items for a given SKU. 
+    #
+    
+    occurences.each do |instance|
+      itemTotal += instance[:itemQuant]
+    end
+    
+    #
+    # Hackish: Since all the instances in occurences are the same type of item
+    # (with the same article number,) then just take the first occurence in
+    # the list and change the quantity to the total number of items counted. 
+    #
+    occurences[0][:itemQuant] = itemTotal
+    uniqMasterHashList << occurences[0]
+  end
+      
+  uniqMasterHashList.each do |c|
+    #puts "DEBUG: Unique items: #{c[:itemNum]}::#{c[:itemQuant]}"
+  end
+
+  total = 0
+  totalItemsExpected = uniqMasterHashList.each do |i|
+    total += i[:itemQuant]
+  end
+  
+  puts "INFO: total unique items expected after consolidating duplicate SKUs: #{total}"
+  return uniqMasterHashList 
+end
+
+#
 # Main program execution
 #
 
@@ -850,12 +924,18 @@ if (options.scanDataFilePath != "")
 		puts "INFO: Length of desc quantity list: #{descQuant.length}"
 	end
 
+  #
+  # Need to make the master hash list sorted by SKU as well as containing only
+  # unique items.
+  #
+  uniqHashList = makeUniqMasterHash(masterHashList)
+
 	#	
 	# Match scanned output with packing list data to make a list of items received.
 	# Be prepared for there to be items with different EANs but the same description.
 	#
 
-	combinedData = getAllMatches(descQuant, masterHashList)
+	combinedData = getAllMatches(descQuant, uniqHashList)
 	
 	# Take the combined data and display it in a nice table.
 
