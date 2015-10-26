@@ -659,6 +659,21 @@ def calculateTotalItemsScanned(combinedData)
 	return scannedTotal
 end
 
+
+#
+# Helper to color code description frequencies.
+#
+
+def descFreqColorCheck(entry)
+	frequency = entry[:descriptionFrequency]
+	
+	if frequency > 1
+		coloredEntry = frequency.to_s.red
+	end
+		return coloredEntry
+
+end
+
 #
 # Helper to color code flag results with low match confidence.
 #
@@ -670,10 +685,9 @@ def confidenceColorCheck(entry)
 		confidence = 0
 	end
 
-	puts "DEBUG: Confidence: #{confidence}"
-	if confidence > 0.95
+	if confidence >= 0.95
 		coloredEntry = confidence.round(3).to_s.green
-	elsif confidence > 0.92 and confidence < 0.95
+	elsif confidence >= 0.92 and confidence < 0.95
 		coloredEntry = confidence.round(3).to_s.yellow
 	elsif confidence > 0.80 and confidence < 0.92
 		coloredEntry = confidence.round(3).to_s.magenta
@@ -709,10 +723,11 @@ def showCombinedData(combinedData)
 "Scanned_Quantity", "Match Confidence", "Description Frequency"
 	
 		combinedData.each do |entry|
-			coloredEntry = confidenceColorCheck(entry)
+			colorCodedFrequency = descFreqColorCheck(entry)
+			colorCodedConfidence = confidenceColorCheck(entry)
 			add_row [ entry[:itemNum], entry[:scannedEAN],
 	entry[:itemDesc], entry[:scannedDescription], 
-	entry[:itemQuant], entry[:scannedQuantity], coloredEntry, entry[:descriptionFrequency] ]
+	entry[:itemQuant], entry[:scannedQuantity], colorCodedConfidence, colorCodedFrequency ]
 			self.add_separator
 		end
 		add_row [{value: "Total number of scanned items", colspan: 1}, totalItemsScanned]
