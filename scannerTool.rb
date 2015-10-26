@@ -474,8 +474,9 @@ def transformScannerData(scanDataList)
 		# Assumes any given order has no more than 999 of any given item.
 		#
 		
-		if itemQuantity.length > 3 or itemQuantity !~ /\d{1,3}$/
+		if itemQuantity.length > 4 or itemQuantity !~ /\d{1,4}$/
 			serialNumber = itemQuantity # If it´s a long number, assume a serial number.
+			# Allow up to 9999 individual items for a given SKU in an order.
 			serialNumbers << serialNumber
 			itemQuantity = 1 # Items with serial numbers are always quantity = 1.
 		end
