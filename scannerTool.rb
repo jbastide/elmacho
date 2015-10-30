@@ -633,17 +633,8 @@ def getAllMatches(descQuant, masterHashList)
 			#puts "****"
 		end
 	end
-
-=begin	
-	puts "DEBUG: Updated Master Hash List"
-	masterHashList.each do |entry|
-		puts 
-		puts entry
-		puts
-	end	
-=end	
+	# This list contains items matched. We still want to, later, output items that were scanned but never matched.
 	return masterHashList
-
 end
 
 
@@ -855,6 +846,15 @@ if (options.packinglist != "")
 end
 
 #
+# TODO: Look for results that appear in the scanner data but weren't matched.
+# 
+
+def findUnmatchedResults
+
+end
+
+
+#
 # Hand scanner enabling code. For automating the counting process.
 #
 
@@ -940,7 +940,11 @@ if (options.scanDataFilePath != "")
 	
 	# Take the combined data and display it in a nice table.
 
-	showCombinedData(combinedData)	
+	showCombinedData(combinedData)
+
+	#Show items scanned but not matched.For every item in the scanner output map,
+	# check the EAN. Do a find in the updated Master Hash list by the EAN for
+	# every item. If no result, then save this result and print it on a newline.	
 end
 
 
