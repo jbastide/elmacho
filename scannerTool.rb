@@ -580,13 +580,17 @@ appears more than once but has different EANs. Check manually."
 	
 	puts "DEBUG: Duplicates hash: #{duplicates}"
 	return duplicates
-	
 end
+
+#
+# Bread and butter method.
+#
 
 def getAllMatches(descQuant, masterHashList)
 
 	jaroTestValues = [0.99, 0.98, 0.97, 0.96, 0.95,0.94,0.93,0.92,0.91, 0.90,0.89, 0.88, 0.87,
 0.86,0.85, 0.84, 0.83, 0.82,0.81] 
+	#jaroTestValues = [0.99, 0.98, ]
 	itemsMatched = []
 	match = nil
 	jarow = FuzzyStringMatch::JaroWinkler.create( :native )
@@ -618,8 +622,8 @@ def getAllMatches(descQuant, masterHashList)
 		# If match is less than that, we're looking at some dubious matches.
 		# Conversely, can match everything, then flag the ones that are over 80%
 		#
-
-		if sortedKeys[0] > 0.750
+    if sortedKeys[0] > 0.90
+		#if sortedKeys[0] > 0.750
 			# Update Master Hash List with: scannedQuantity, scannedDescription, confidence
 
                 	expectedItem[:scannedQuantity] = bestMatch[:scannedItem][:itemQuantity]   
@@ -710,8 +714,8 @@ def showCombinedData(combinedData)
 	end
 
 	displayTable = table do 
-		self.headings = "SKU", "EAN", "Description", "Matched Description", "Expected_Quantity", 
-"Scanned_Quantity", "Match Confidence", "Description Frequency"
+		self.headings = "SKU", "EAN", "Description", "Matched Description", "Expected_Quant", 
+"Scanned_Quant", "Confidence", "Desc Freq"
 	
 		combinedData.each do |entry|
 			colorCodedFrequency = descFreqColorCheck(entry)
@@ -728,9 +732,7 @@ def showCombinedData(combinedData)
 	return displayTable, combinedData
 end
 
-#
-# Make a unique master hash list
-#
+
 
 def makeUniqMasterHash(masterHashList)
   
@@ -848,10 +850,35 @@ end
 #
 # TODO: Look for results that appear in the scanner data but weren't matched.
 # 
+# Remember: descQuant << {itemEAN: itemID,
+#						itemDescription: hashedEanFile[itemID], 
+#						itemQuantity: hashedScannerData[itemID][:itemQuant],
+#						itemSerials: hashedScannerData[itemID][:serialNumbers]}
+#
 
-def findUnmatchedResults
-
+def findUnmatchedResults(descQuant, uniqHashList)
+  
+  matched = []
+  notMatched = []
+  
+  matched = uniqHashList.find_all {|i| i[:scannedEAN] != nil}
+  #puts matched
+  descQuant.each do |scanned|
+    if matched.find { |i| i[:scannedEAN] == scanned[:itemEAN] }
+    else
+      notMatched << scanned
+    end
+  end
+  
+  puts "WARN: The following items were scanned but could not be \
+reliably matched against the packing list using description strings."
+  puts "***"
+  puts notMatched
+  puts "***"
+  
+  
 end
+
 
 
 #
@@ -945,6 +972,7 @@ if (options.scanDataFilePath != "")
 	#Show items scanned but not matched.For every item in the scanner output map,
 	# check the EAN. Do a find in the updated Master Hash list by the EAN for
 	# every item. If no result, then save this result and print it on a newline.	
+  findUnmatchedResults(descQuant, uniqHashList)
 end
 
 
