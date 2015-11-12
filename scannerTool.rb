@@ -36,7 +36,7 @@ class OptparseExample
 		# We set default values here.
 		options = OpenStruct.new
 		options.packinglist = ""
-		options.scanDataFilePath = "" #TODO: Be consistent with init values.
+		options.scanDataFilePath = [] #TODO: Be consistent with init values.
 		options.outputSortedPackingList = false # Outputs a sorted packing list to console and a file.
 		options.verbose = false
  
@@ -53,10 +53,10 @@ class OptparseExample
 			end
 			
 			# Optional argument. 
-			opts.on("-s", "--scanfile [SCANNERFILE]",
-              "Text file of EAN numbers from a scanner") do |name|
+			opts.on("-s", "--scanfile [SCANNERFILE1] [SCANNERFILE2] ", Array, 
+      "Pass in scanner trans.dat files") do |name|
 				puts "DEBUG: Name: #{name}"
-				options.scanDataFilePath << name
+				options.scanDataFilePath = name
 			end
 			
 			# Optional argument. Boolean switch.
@@ -945,14 +945,19 @@ end
 # Hand scanner enabling code. For automating the counting process.
 #
 
-if (options.scanDataFilePath != "")
+if (options.scanDataFilePath != [])
 	begin
-		puts "INFO: Processing EAN mapping file."
-		eanFileHandle = getFile(EANMAPFILEPATH)	
-		#puts "DEBUG: Got EAN File handle: #{eanFileHandle}"
-		eanMapList = processFile(eanFileHandle)	
-		#puts "DEBUG: Printing first line from eanMapList #{eanMapList[0]}"
-		hashedEanFile = transformEanFile(eanMapList)
+		puts "INFO: Processing EAN mapping file." # This is varer.dat
+		masterEanMapList = [] # Consolidate all the lines from all the EAN files into a single array.
+    options.scanDataFilePath.each do |file|
+      eanFileHandle = getFile(EANMAPFILEPATH)	
+		  #puts "DEBUG: Got EAN File handle: #{eanFileHandle}"
+		  eanMapList = processFile(eanFileHandle)
+      masterEanMapList.concat(eanMapList)
+    end	
+		  #puts "DEBUG: Printing first line from eanMapList #{eanMapList[0]}"
+		  hashedEanFile = transformEanFile(masterEanMapList)
+    
 	rescue Exception => e
 		puts "Unable to process EAN mapping file at #{EANMAPFILEPATH}"
 		raise e
@@ -962,14 +967,18 @@ if (options.scanDataFilePath != "")
 
 	begin
 		puts "INFO: Processing scan data file."
-		scanDataFileHandle = getFile(options.scanDataFilePath)
-		scanDataList = processFile(scanDataFileHandle)
+		masterScanDataList = []
+    options.scanDataFilePath.each do |file|
+      scanDataFileHandle = getFile(file)
+		  scanDataList = processFile(scanDataFileHandle)
+      masterScanDataList.concat(scanDataList)
+    end
 		
 		# DEBUG
 		#puts "DEBUG: scanDataList"
 		#puts "DEBUG: Scan data list length: #{scanDataList.length}"
 		
-		hashedScannerData = transformScannerData(scanDataList)
+		hashedScannerData = transformScannerData(masterScanDataList)
 	rescue
 		puts "ERROR: Unable to process scan data file."
 	end
