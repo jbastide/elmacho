@@ -626,7 +626,7 @@ def getAllMatches(descQuant, masterHashList)
 		# If match is less than that, we're looking at some dubious matches.
 		# Conversely, can match everything, then flag the ones that are over 80%
 		#
-    if sortedKeys[0] > 0.90
+                if sortedKeys[0] > 0.90
 		#if sortedKeys[0] > 0.750
 			# Update Master Hash List with: scannedQuantity, scannedDescription, confidence
 
@@ -704,7 +704,7 @@ end
 def showCombinedData(combinedData)
 
 	totalItemsScanned = calculateTotalItemsScanned(combinedData)
-
+        combinedData = combinedData.sort_by {|k| k[:itemDesc].downcase}
 	#	
 	# Items that have duplicate descriptions should be flagged for manual follow-up.
 	#
@@ -806,7 +806,10 @@ def makeUniqMasterHash(masterHashList)
   
   puts "INFO: Total unique items expected after consolidating duplicate SKUs: #{total}"
   puts "INFO: Total unique SKUs expected after consolidation: #{uniqMasterHashList.length} "
+  #sortedList = uniqMasterHashList.sort_by {|k| k[:itemDescription]}
+  #return sortedList
   return uniqMasterHashList 
+ 
 end
 
 #
@@ -859,28 +862,35 @@ end
 #						itemQuantity: hashedScannerData[itemID][:itemQuant],
 #						itemSerials: hashedScannerData[itemID][:serialNumbers]}
 #
+# TODO, move this higher up where it belongs.
+#
 
 def findUnmatchedResults(descQuant, uniqHashList)
   
   matched = []
   notMatched = []
-  
+  sortedNotmatched = []
+
   matched = uniqHashList.find_all {|i| i[:scannedEAN] != nil}
-  #puts matched
   descQuant.each do |scanned|
     if matched.find { |i| i[:scannedEAN] == scanned[:itemEAN] }
     else
       notMatched << scanned
     end
   end
+
+  sorted = notMatched.sort_by {|k| k[:itemDescription].downcase} 
   
   puts "WARN: The following items were scanned but could not be \
 reliably matched against the packing list using description strings."
   puts "***"
-  puts notMatched
+  sorted.each do |result|
+  	puts "#{result[:itemDescription]} => #{result[:itemQuantity]}"
+  end
+  puts "DEBUG"
+  puts sorted
   puts "***"
-  
-  
+
 end
 
 
@@ -956,11 +966,11 @@ if (options.scanDataFilePath != "")
 		puts "INFO: Length of desc quantity list: #{descQuant.length}"
 	end
 
-  #
-  # Need to make the master hash list sorted by SKU as well as containing only
-  # unique items.
-  #
-  uniqHashList = makeUniqMasterHash(masterHashList)
+  	#
+  	# Need to make the master hash list sorted by SKU as well as containing only
+  	# unique items.
+  	#
+  	uniqHashList = makeUniqMasterHash(masterHashList)
 
 	#	
 	# Match scanned output with packing list data to make a list of items received.
@@ -976,7 +986,7 @@ if (options.scanDataFilePath != "")
 	#Show items scanned but not matched.For every item in the scanner output map,
 	# check the EAN. Do a find in the updated Master Hash list by the EAN for
 	# every item. If no result, then save this result and print it on a newline.	
-  findUnmatchedResults(descQuant, uniqHashList)
+  	findUnmatchedResults(descQuant, uniqHashList)
 end
 
 
