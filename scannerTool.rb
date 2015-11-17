@@ -198,14 +198,19 @@ def parseEntry(entry)
 	splitEntry << itemNum[1]
 	
   #
-	# Old regex: itemDescription = /^\w+\s+(.+)\d{4,6}/.match(entry.lstrip.chomp)
+	itemDescription = /^\w+\s+(.+)\d{4,6}/.match(entry.lstrip.chomp)
+	
+        # Convert match object to string.
+	itemDescription = itemDescription[1].encode("UTF-16be", :invalid=>:replace, :replace=>"?").encode('UTF-8').lstrip.rstrip
+#
   # Allowed the description field to capture the order number as well. This helps us avoid losing additional characters,
-  # and the string matching still seems to work.
+  # and the string matching still seems to work. Problem is that we're not detecting all duplicates this way.
   #
   
-	itemDescription = /^\w+\s+(.+\d{4,6})/.match(entry.lstrip.chomp)
+	#itemDescription = /^\w+\s+(.+\d{4,6})/.match(entry.lstrip.chomp)
   
-	splitEntry << itemDescription[1]
+	#splitEntry << itemDescription[1]
+	splitEntry << itemDescription
 
 	itemQuant = /\s{12,}(\d+).{,6}?$/.match(entry.lstrip.chomp)
 
@@ -617,7 +622,8 @@ def getAllMatches(descQuant, masterHashList)
 		jaroDistanceHash = {} # All results for a given entry in the master hash
 		descQuant.each do |scannedItem|
 			#jaroTestValues.each do |j|
-			d = jarow.getDistance( scannedItem[:itemDescription], expectedItem[:itemDesc])
+			#d = jarow.getDistance( scannedItem[:itemDescription], expectedItem[:itemDesc])
+                        d = jarow.getDistance( scannedItem[:itemDescription].downcase, expectedItem[:itemDesc].downcase)
 			jaroDistanceHash[d] = {scannedItem: scannedItem, expectedItem: expectedItem}
       #end	
 		end
@@ -641,7 +647,7 @@ def getAllMatches(descQuant, masterHashList)
 		# If match is less than that, we're looking at some dubious matches.
 		#
     
-    if sortedKeys[0] > 0.85
+    if sortedKeys[0] > 0.92
 		
       # Update Master Hash List with: scannedQuantity, scannedDescription, confidence.
       # BUT: Only do this if this isn't an item with a duplicate description.
@@ -728,19 +734,27 @@ def duplicateDescriptionUpdate(combinedData)
 			if entry[:itemDesc] == record[:itemDesc]
 				entry[:descriptionFrequency] += 1
 			end
+                        # Check if the scanned descriptions are dupes as well. Make sure
+			# we're not comparing nil values.
+                        
+			if entry[:itemDescription] and entry[:itemDescription] == record[:itemDescription]
+                                puts entry[:itemDescription]
+				puts record [:itemDescription]
+				entry[:descriptionFrequency] += 1
+                        end
 		end
     
-    #
-    # Items that have :descriptionFrequency > 1 need to unset the scanned
-    # EAN and scanned quantities, since these could be wrong. We'll have
-    # to match them manually for now.
-    #
+	#
+    	# Items that have :descriptionFrequency > 1 need to unset the scanned
+    	# EAN and scanned quantities, since these could be wrong. We'll have
+    	# to match them manually for now.
+    	#
     
-    if entry[:descriptionFrequency] > 1
-      entry[:scannedQuantity] = nil
-      entry[:scannedEAN] = nil
-    end
-	end
+    		if entry[:descriptionFrequency] > 1
+      			entry[:scannedQuantity] = nil
+      			entry[:scannedEAN] = nil
+    		end
+  	end
   
   return combinedData
 end
@@ -899,6 +913,15 @@ reliably matched against the packing list using description strings."
   puts displayTable
 end
 
+def displayAllScanned(descQuant)
+  sorted = []
+  sorted = descQuant.sort_by {|k| k[:itemDescription].downcase}
+  sorted.each do |scanned|
+    puts "####"
+    puts scanned
+  end
+end
+
 #
 # Main program execution
 #
@@ -1048,8 +1071,9 @@ if (options.scanDataFilePath != [])
 	#Show items scanned but not matched.For every item in the scanner output map,
 	# check the EAN. Do a find in the updated Master Hash list by the EAN for
 	# every item. If no result, then save this result and print it on a newline.	
-  findUnmatchedResults(descQuant, uniqHashList)
-
+  #findUnmatchedResults(descQuant, uniqHashList)
+  puts "All scanned results for matching against holes in matched list"
+  displayAllScanned(descQuant)
 end
 
 
