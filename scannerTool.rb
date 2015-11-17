@@ -441,7 +441,7 @@ def transformEanFile(itemIdDescList)
 				itemDescription = cleanEntry.match(/^\d{13}(.+)/)[1]
 			rescue Exception => ex
 				puts ex
-				puts "Can't parse description for EAN: #{itemID}"
+				puts "Can't parse description for EAN in varer.dat: #{itemID}"
 			end
 			hashedData[itemID] = itemDescription
 			#puts "DEBUG: Item description: #{itemDescription}"
