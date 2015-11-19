@@ -79,10 +79,9 @@ class OptparseExample
 		end
 
     opt_parser.parse!(args)
-	options
+	  options
 	end  # parse()
-
-end  # class OptparseExample
+end  
 
 #
 # Function definitions.
@@ -157,24 +156,6 @@ def splitIntoSections(page)
 end
 
 #
-# Stub. Add to the master list once a section has been parsed and hashed. 
-# Returns nil. 
-#
-
-def addToMasterList(listOfHashedItems)
-	return nil
-end
-
-#
-# Stub. Checks the state of the master list.
-# Returns nil.
-#
-
-def checkMasterList()
-	return nil
-end
-
-#
 # Helper function.
 #
 
@@ -218,48 +199,6 @@ def parseEntry(entry)
 	splitEntry << itemQuantity
 	
 	return splitEntry
-end
-
-#
-# Parse subsection
-# Takes a subsection, breaks it into a list of substrings. 
-# Returns array: item number, description, order, quantity 
-# We can't easilt parse based on spaces. Sometimes fields run together. Get the spacing of an entry.
-#
-
-def parseEntryOld(entry)
-	parsedEntry = {}
-	itemQuantity = 0
-	
-	# We don't need the order info. Get rid of it.
-	# Split on white space
-	splitEntry = entry.chomp.lstrip.split(/\s{3,}/,4)
-	#pp splitEntry.class
-	#pp splitEntry
-	
-	# Convert the quantity field to a number
-	if splitEntry[3]
-		itemQuantity = convertNumField(splitEntry[3])
-	else
-		itemQuantity = 0
-	end
-	
-	# Update the quantity field.
-	splitEntry[3] = itemQuantity
-	
-	return splitEntry
-end
-
-#
-# Stub. Turn a parsed subsection into a list of hash items.
-# [{itemDescription => "DESCRIPTION", itemEAN => "EAN"}]
-# Returns a list of hash items for the given subsection.
-#
-
-def convertToHash(parsedSubsection)
-	listOfHashedItems = []
-	
-	return listOfHashedItems
 end
 
 #
@@ -338,9 +277,9 @@ end
 
 #
 # As input, this takes a list of the form [["item number", "item description", item-quantity],]
-# Returns a table that's fit for display on the screen or ASCII printer output.
-# TODO: Play with padding to make this look better when printed on paper.
-# TODO: Add column to tell if this has been scanned? Or do this later in a report.
+# Returns a table that's fit for display on the screen or ASCII printer output. This displays
+# the PDF packing list.
+#
 
 def viewSortedItemDescList(descList)
 	itemTotal = 0 # Total number of individual items in the order.
@@ -432,11 +371,8 @@ def transformEanFile(itemIdDescList)
 		#
 	
 		cleanEntry = cleanEntry.encode("UTF-16be", :invalid=>:replace, :replace=>"?").encode('UTF-8').lstrip.rstrip	
-		#pp "DEBUG: Clean entry: #{cleanEntry}"
 		begin
 			itemID = cleanEntry.match(/^(\d{13})/)[1]
-			#puts "DEBUG: Item ID: #{itemID}"
-			#pp "Searching for item desc"
 			begin
 				itemDescription = cleanEntry.match(/^\d{13}(.+)/)[1]
 			rescue Exception => ex
@@ -454,7 +390,6 @@ def transformEanFile(itemIdDescList)
 	return hashedData
 end
 
-
 #
 # Transform the scanner data into a useful, hashed form.
 # Return a list of the form: [{itemEAN => {itemQuant: , itemSerial: }}]
@@ -463,9 +398,6 @@ end
 def transformScannerData(scanDataList)
 	hashedData = {}
 
-	#puts "DEBUG: in transform scanner data function."
-	#puts "DEBUG: scanDataList: #{scanDataList}"
-	#puts "DEBUG: scanDataList count: #{scanDataList.length}"
 	scanDataList.each do |entry|
 		serialNumbers = []
 		cleanEntry = entry.chomp()
@@ -477,7 +409,7 @@ def transformScannerData(scanDataList)
 		#
 		
 		itemQuantity = cleanEntry.match(/\s+(\w+)/)[1]   
-		#puts "Item Quantity: #{itemQuantity}"
+
 		#
 		# Now we start to get more strict with the item quantity to
 		# differentiate between item quantities and serial numbers.
@@ -487,39 +419,27 @@ def transformScannerData(scanDataList)
 		if itemQuantity.length > 4 or itemQuantity !~ /\d{1,4}$/
 			serialNumber = itemQuantity # If it´s a long number, assume a serial number.
 			# Allow up to 9999 individual items for a given SKU in an order.
-			serialNumbers << serialNumber # I think this could just be an int. Need to look at it more.
+			serialNumbers << serialNumber 
 			itemQuantity = 1 # Items with serial numbers are always quantity = 1.
 		end
-		
     itemQuantity = itemQuantity.to_i
-		#	
-		# If item exists, do an update. This should work if we have duplicate EANs in a 
-    # scan file.
+		
+    #	
+		# If item exists, do an update of the quantity field.
 		#
 
 		if hashedData[itemEAN]
-			#puts "!!!DEBUG: Found a duplicate EAN entry: #{itemEAN}"
-			#puts "DEBUG: Updating item quantity."
-			# Update the quantity field.
-			
       hashedData[itemEAN][:itemQuant] += itemQuantity
-			#puts "New quantity: #{hashedData[itemEAN][:itemQuant]}"  
-      
       # Update the serial numbers field.
       if hashedData[itemEAN][:serialNumbers]
         hashedData[itemEAN][:serialNumbers] << serialNumbers[0]
-      end
-      #puts "DEBUG: hashedData Entry: #{itemEAN}:#{hashedData[itemEAN]}"
-    
+      end    
 		else 
-			#itemEAN # Otherwise create an entry.
-			#puts "DEBUG: Creating an EAN entry."
+			# Otherwise create an entry.
 			hashedData[itemEAN] = {itemQuant: itemQuantity, :serialNumbers => serialNumbers}
-			#puts "DEBUG: hashedData Entry: #{itemEAN}:#{hashedData[itemEAN]}"
 		end
 	end
 	
-	#puts "DEBUG: number of key,value pairs in the hashed data: #{hashedData.length}"
 	return hashedData
 end
 
@@ -529,9 +449,7 @@ end
 #
 
 def generateDescriptionQuantityMap(hashedScannerData, hashedEanFile)
-	descQuant = []
-	
-	# TODO: Quantities need to be fixed, showing as nil
+	descQuant = []	
 	hashedScannerData.keys.each do |itemID|
 		if hashedEanFile[itemID]
 			descQuant << {itemEAN: itemID,
@@ -545,87 +463,24 @@ def generateDescriptionQuantityMap(hashedScannerData, hashedEanFile)
 end
 
 #
-# DEPRECATED.
-# Warn if two items with different EANs share the same description.
-# Tested. 
-#
-
-def checkForDuplicateDescriptions(descQuant)
-	
-	descriptions = {} # Hash of form Description => EAN
-	duplicates = []
-	
-	descQuant.each do |item|
-		# Only add to this hash if an item is not a duplicate.
-		if descriptions[item[:itemDescription]]
-			puts "WARNING: Item #{item[:itemDescription]} :: #{item[:itemEAN]} \
-appears more than once but has different EANs. Check manually."
-			duplicates << {item[:itemDescription] => item[:itemEAN]}
-			
-			#
-			# Put both duplicate items in there.
-			# We'll pull the item from the description hash now. It needs to be identified.
-			# Anytime we get a duplicate description entry, the count of total entries
-			# needs to be reduced by two.
-			
-			#
-			# TODO: Return the quantity of the duplicates in addition to description and EAN.
-			#
-			
-			duplicates << {item[:itemDescription] => descriptions[item[:itemDescription]]}
-			
-			#
-			# Pull out the duplicate entry from the hash (okay to be destructive.)
-			#
-			
-			puts "DEBUG: Deleting a duplicate entry. #{item[:itemDescription]} "
-			descriptions.delete(item[:itemDescription])
-		else
-			descriptions[item[:itemDescription]] = item[:itemEAN]
-		end
-	end
-	
-	puts "DEBUG: WARN: Items with the same description but different EANs."
-	duplicates.each do |dup|
-		puts "WARN: Duplicate entry: #{dup}"
-	end
-	
-	puts "DEBUG: Items with unique descriptions."
-	descriptions.each do |description|
-		puts "DEBUG: description hash entry: #{description}"
-	end
-		
-	puts "DEBUG: number of items in unique description hash: #{descriptions.length}}"
-	puts "DEBUG: Number of items in duplicates hash: #{duplicates.length}}"
-	
-	puts "DEBUG: Duplicates hash: #{duplicates}"
-	return duplicates
-end
-
-#
 # Bread and butter method to get all the matches between the packing list data and
 # the scanned item data.
+# TODO: Make this even more useful by storing the top three or four matches and returning those
+# values. We could then display them in the final report if the match confidence was low. The
+# goal would be making it quick to identify matching items without having to do a lot of scrolling
+# up and down on the screen.
 #
 
 def getAllMatches(descQuant, masterHashList)
-
-  # TODO: Make this cleaner by using a Ruby range. 
-	#jaroTestValues = [0.99, 0.98, 0.97, 0.96, 0.95,0.94,0.93,0.92,0.91, 0.90,0.89, 0.88, 0.87,
-#0.86,0.85, 0.84, 0.83, 0.82,0.81]
-  
-	#jaroTestValues = [0.99, 0.98, ]
-	itemsMatched = []
+  itemsMatched = []
 	match = nil
 	jarow = FuzzyStringMatch::JaroWinkler.create( :native )
 
 	masterHashList.each do |expectedItem|
 		jaroDistanceHash = {} # All results for a given entry in the master hash
 		descQuant.each do |scannedItem|
-			#jaroTestValues.each do |j|
-			#d = jarow.getDistance( scannedItem[:itemDescription], expectedItem[:itemDesc])
-                        d = jarow.getDistance( scannedItem[:itemDescription].downcase, expectedItem[:itemDesc].downcase)
+			d = jarow.getDistance( scannedItem[:itemDescription].downcase, expectedItem[:itemDesc].downcase)
 			jaroDistanceHash[d] = {scannedItem: scannedItem, expectedItem: expectedItem}
-      #end	
 		end
 
 		#		
@@ -639,19 +494,17 @@ def getAllMatches(descQuant, masterHashList)
 		#
 
 		bestMatch = jaroDistanceHash[sortedKeys[0]]
-    
-		#puts "DEBUG!!!! Best Match #{bestMatch}"
-			
+    			
 		#	
-		# This gives us the best match in a set if the Jarrow distance is over 0.85
-		# If match is less than that, we're looking at some dubious matches.
+		# This gives us the best match in a set if the Jarrow distance is over 0.92
 		#
     
     if sortedKeys[0] > 0.92
 		
+      #
       # Update Master Hash List with: scannedQuantity, scannedDescription, confidence.
-      # BUT: Only do this if this isn't an item with a duplicate description.
-
+      #
+      
       expectedItem[:scannedQuantity] = bestMatch[:scannedItem][:itemQuantity]   
       expectedItem[:scannedDescription] = bestMatch[:scannedItem][:itemDescription]
       expectedItem[:scannedEAN] = bestMatch[:scannedItem][:itemEAN]
@@ -660,7 +513,7 @@ def getAllMatches(descQuant, masterHashList)
 			
 		end
 	end
-	# This list contains items matched.
+
 	return masterHashList
 end
 
@@ -734,27 +587,33 @@ def duplicateDescriptionUpdate(combinedData)
 			if entry[:itemDesc] == record[:itemDesc]
 				entry[:descriptionFrequency] += 1
 			end
-                        # Check if the scanned descriptions are dupes as well. Make sure
+      
+      #
+      # Check if the scanned descriptions are dupes as well. Make sure
 			# we're not comparing nil values.
-                        
+      #
+                       
 			if entry[:itemDescription] and entry[:itemDescription] == record[:itemDescription]
-                                puts entry[:itemDescription]
+        puts entry[:itemDescription]
 				puts record [:itemDescription]
 				entry[:descriptionFrequency] += 1
-                        end
+      end
 		end
     
-	#
-    	# Items that have :descriptionFrequency > 1 need to unset the scanned
-    	# EAN and scanned quantities, since these could be wrong. We'll have
-    	# to match them manually for now.
-    	#
+	  #
+    # Items that have :descriptionFrequency > 1 need to unset the scanned
+    # EAN and scanned quantities, since these could be wrong. This is an
+    # unfortunate consequence of matching items using description strings. If 
+    # we had unique article numbers or EANs across our data sources, we wouldn't 
+    # have this issue. The workaround will be for the tool to output multiple suggestions
+    # for items that have duplicate descriptions.
+    #
     
-    		if entry[:descriptionFrequency] > 1
-      			entry[:scannedQuantity] = nil
-      			entry[:scannedEAN] = nil
-    		end
-  	end
+    if entry[:descriptionFrequency] > 1
+      entry[:scannedQuantity] = nil
+      entry[:scannedEAN] = nil
+    end
+  end
   
   return combinedData
 end
@@ -767,8 +626,6 @@ def showCombinedData(combinedData)
 
 	totalItemsScanned = calculateTotalItemsScanned(combinedData)
   combinedData = combinedData.sort_by {|k| k[:itemDesc].downcase}
-
-  #combinedData = duplicateDescriptionUpdate(combinedData)
   
 	displayTable = table do 
 		self.headings = "SKU", "EAN", "Description", "Matched Description", "Expected_Quant", 
@@ -786,7 +643,10 @@ def showCombinedData(combinedData)
     add_row [{value: "Total number of scanned items", colspan: 1}, totalItemsScanned]
   end
 	
+  #
   # This is where we show the ASCII table of results.
+  #
+  
 	puts displayTable
 	return displayTable, combinedData
 end
@@ -842,16 +702,13 @@ def makeUniqMasterHash(masterHashList)
     end
     
     #
-    # Hackish: Since all the instances in occurences are the same type of item
+    # Since all the instances in occurences are the same type of item
     # (with the same article number,) then just take the first occurence in
     # the list and change the quantity to the total number of items counted. 
     #
+    
     occurences[0][:itemQuant] = itemTotal
     uniqMasterHashList << occurences[0]
-  end
-      
-  uniqMasterHashList.each do |c|
-    #puts "DEBUG: Unique items: #{c[:itemNum]}::#{c[:itemQuant]}"
   end
 
   total = 0
@@ -861,8 +718,7 @@ def makeUniqMasterHash(masterHashList)
   
   puts "INFO: Total unique items expected after consolidating duplicate SKUs: #{total}"
   puts "INFO: Total unique SKUs expected after consolidation: #{uniqMasterHashList.length} "
-  #sortedList = uniqMasterHashList.sort_by {|k| k[:itemDescription]}
-  #return sortedList
+  
   return uniqMasterHashList 
  
 end
@@ -875,8 +731,6 @@ end
 #						itemDescription: hashedEanFile[itemID], 
 #						itemQuantity: hashedScannerData[itemID][:itemQuant],
 #						itemSerials: hashedScannerData[itemID][:serialNumbers]}
-#
-# TODO, move this higher up where it belongs.
 #
 
 def findUnmatchedResults(descQuant, uniqHashList)
@@ -933,13 +787,9 @@ eanFileHandle = nil
 eanMapList = nil
 hashedEanFile = {}
 descQuant = [] # EANs, descriptions, and scanned quantities. Used when we
-			   # match items in the packing list.
+			         # match items in the packing list.
 tabularItemList = []
 options = OptparseExample.parse(ARGV)
-
-#
-# Maybe we don't make PDF processing a required option.
-#
 
 if (options.packinglist != "")
 	puts "Processing PDF packing list."
@@ -971,15 +821,14 @@ end
 if (options.scanDataFilePath != [])
 	begin
 		puts "INFO: Processing EAN mapping file." # This is varer.dat
-		masterEanMapList = [] # Consolidate all the lines from all the EAN files into a single array.
+		masterEanMapList = []                     # Consolidate all the lines from all the 
+                                              # EAN files into a single array.
     options.scanDataFilePath.each do |file|
       eanFileHandle = getFile(EANMAPFILEPATH)	
-		  #puts "DEBUG: Got EAN File handle: #{eanFileHandle}"
 		  eanMapList = processFile(eanFileHandle)
       masterEanMapList.concat(eanMapList)
     end	
-		  #puts "DEBUG: Printing first line from eanMapList #{eanMapList[0]}"
-		  hashedEanFile = transformEanFile(masterEanMapList)
+    hashedEanFile = transformEanFile(masterEanMapList)
     
 	rescue Exception => e
 		puts "Unable to process EAN mapping file at #{EANMAPFILEPATH}"
@@ -996,28 +845,18 @@ if (options.scanDataFilePath != [])
 		  scanDataList = processFile(scanDataFileHandle)
       masterScanDataList.concat(scanDataList)
     end
-		
-		# DEBUG
-		#puts "DEBUG: scanDataList"
-		#puts "DEBUG: Scan data list length: #{scanDataList.length}"
-		
 		hashedScannerData = transformScannerData(masterScanDataList)
 	rescue
 		puts "ERROR: Unable to process scan data file."
 	end
 	
-	if options.verbose 
+	if options.verbose #TODO: Make the verbose option more useful, in general.
 		puts "INFO: Hashed Scanner Data."
 		hashedScannerData.each do |key,values|
-			puts "INFO: Item ID: #{key} => Item Info: #{values}"
-			
+			puts "INFO: Item ID: #{key} => Item Info: #{values}"	
 		end
 		puts "INFO: Number of products: #{hashedScannerData.keys.length}"
 	end
-	
-	#
-	# TODO: Add support to consolidate multiple scan files.
-	#
 	
 	#
 	# This list is from the scanner data.
@@ -1025,12 +864,6 @@ if (options.scanDataFilePath != [])
 	#
 
 	descQuant = generateDescriptionQuantityMap(hashedScannerData, hashedEanFile)
-
-	#
-	# Let's go through the list and immediately warn if items with different EANs have the same
-	# item description. We'll save this output as well.
-	# TODO: Find a good way to display this information in the reports.
-	#
 	
 	if options.verbose
 		puts "INFO: Hashed descriptionQuantity map."
@@ -1068,10 +901,13 @@ if (options.scanDataFilePath != [])
 
 	showCombinedData(combinedData)
 
-	#Show items scanned but not matched.For every item in the scanner output map,
-	# check the EAN. Do a find in the updated Master Hash list by the EAN for
-	# every item. If no result, then save this result and print it on a newline.	
-  #findUnmatchedResults(descQuant, uniqHashList)
+  #
+	# Show all scanned items. Use this as a reference for now. 
+  # Later, this can be part of the verbose output, or another option. 
+  # We shouldn't need to refer to the list of all scanned items when we display
+  # addiitonal matches in the final report.
+  #
+  
   puts "All scanned results for matching against holes in matched list"
   displayAllScanned(descQuant)
 end
